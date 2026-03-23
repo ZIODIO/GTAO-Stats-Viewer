@@ -1,39 +1,33 @@
-const SERVER_URL = "http://127.0.0.1:39842";
+const SERVER_URL = "http://localhost:39842";
 const BASE_URL   = "https://socialclub.rockstargames.com";
 
-// 토큰을 기억해둘 저장소 추가
-const tokenCache = {};
-
 async function getToken(url) {
-  // 1. 이미 기억하고 있는 토큰이 있으면 통신 안 하고 바로 꺼내 씀 (초고속!)
-  if (tokenCache[url]) {
-    return tokenCache[url];
-  }
-
-  // 2. 없으면 락스타 서버에서 가져옴
   const resp = await fetch(url, {
     credentials: "include",
     headers: { "Accept-Language": "ko-KR,ko;q=0.9" }
   });
-  
   const html = await resp.text();
   const match = html.match(/name="__RequestVerificationToken"[^>]*value="([^"]+)"/);
-  
-  if (match) {
-    tokenCache[url] = match[1]; // 다음번 검색을 위해 저장
-    return match[1];
-  }
-  return "";
+  return { token: match ? match[1] : "", html };
 }
 
-async function fetchStats(nickname) {
+async function fetchStats(nickname, platform = "pcalt") {
   try {
     const ts = Date.now();
 
-    const [token, statsToken] = await Promise.all([
-      getToken(`${BASE_URL}/member/${encodeURIComponent(nickname)}/games/gtav/pcalt/career/overview/gtaonline`),
-      getToken(`${BASE_URL}/member/${encodeURIComponent(nickname)}/games/gtav/pcalt/career/stats/gtaonline/career`),
-    ]);
+    // overview 페이지에서 토큰 추출 + 닉네임 존재 확인
+    const { token, html: pageHtml } = await getToken(
+      `${BASE_URL}/member/${encodeURIComponent(nickname)}/games/gtav/${platform}/career/overview/gtaonline`
+    );
+
+    // 닉네임이 페이지에 없으면 존재하지 않는 유저
+    if (!pageHtml.includes("freemodeRank") && !pageHtml.includes("authUserNickName")) {
+      return { success: false, error: "존재하지 않는 닉네임입니다." };
+    }
+
+    const { token: statsToken } = await getToken(
+      `${BASE_URL}/member/${encodeURIComponent(nickname)}/games/gtav/${platform}/career/stats/gtaonline/career`
+    );
 
     console.log("[GTAO] 토큰 추출 완료");
 
@@ -70,7 +64,7 @@ async function fetchStats(nickname) {
 async function fetchAwardCategory(nickname, category, token) {
   try {
     const ts  = Date.now();
-    const url = `${BASE_URL}/games/gtav/career/AwardsAjax?slot=Freemode&nickname=${encodeURIComponent(nickname)}&category=${category}&_=${ts}`;
+    const url = `${BASE_URL}/games/gtav/career/AwardsAjax?slot=Freemode&nickname=${encodeURIComponent(nickname)}&category=${category}&lang=ko&_=${ts}`;
     const resp = await fetch(url, {
       headers: {
         "Accept":                     "text/html, */*; q=0.01",
@@ -98,8 +92,8 @@ async function pollFromPython() {
         const data = await resp.json();
 
         if (data.nickname) {
-          console.log("[GTAO] 통계 요청:", data.nickname);
-          const result = await fetchStats(data.nickname);
+          console.log("[GTAO] 통계 요청:", data.nickname, data.platform);
+          const result = await fetchStats(data.nickname, data.platform || "pcalt");
           await fetch(`${SERVER_URL}/result`, {
             method:  "POST",
             headers: { "Content-Type": "application/json" },
@@ -109,7 +103,7 @@ async function pollFromPython() {
 
         if (data.award_category) {
           console.log("[GTAO] 어워드 요청:", data.award_category, data.award_nickname);
-          const token = await getToken(
+          const { token } = await getToken(
             `${BASE_URL}/member/${encodeURIComponent(data.award_nickname)}/games/gtav/pcalt/career/awards/general`
           );
           const result = await fetchAwardCategory(data.award_nickname, data.award_category, token);
@@ -126,15 +120,15 @@ async function pollFromPython() {
   }
 }
 
-chrome.alarms.create("keepAlive", { periodInMinutes: 0.2 }); // 12초마다
+// 시작하자마자 즉시 연결 시도
+fetch("http://localhost:39842/pending", { signal: AbortSignal.timeout(500) })
+  .catch(() => {});
+
+chrome.alarms.create("keepAlive", { periodInMinutes: 0.2 });
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "keepAlive") {
     console.log("[GTAO] keepAlive");
   }
 });
-
-// 시작하자마자 즉시 연결 시도
-fetch("http://127.0.0.1:39842/pending", { signal: AbortSignal.timeout(500) })
-  .catch(() => {});
 
 pollFromPython();
