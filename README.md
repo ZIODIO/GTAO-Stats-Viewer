@@ -1,1 +1,16 @@
 # GTAO-Stats-Viewer
+
+https://drive.google.com/file/d/1tg9EHOhM0i4cHZGIwDNrdhOf3TGUX8qD/view?usp=sharing
+
+GTAO 통계 뷰어 v1.0 패치노트
+
+[버그 수정]
+- 비공개 크루 조직색상 오류 수정
+- 시간당 수익 계산 기준 오류 수정 (캐릭터 → 전체 플레이타임)
+- 존재하지 않는 닉네임 검색 시 오류 없이 안내 메시지 표시
+
+[기능 추가]
+- 유저 통계 사이트 바로가기 버튼 추가
+- 부캐릭터 의심 판정 항목 추가
+- Enhanced / Legacy 플랫폼 선택 기능 추가
+- 6글자 미만 닉네임 입력 시 즉시 차단
