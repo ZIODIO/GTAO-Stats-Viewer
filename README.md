@@ -1,7 +1,6 @@
 # GTAO-Stats-Viewer
 
-https://drive.google.com/file/d/1tg9EHOhM0i4cHZGIwDNrdhOf3TGUX8qD/view?usp=sharing
-
+https://bit.ly/4lLfvud
 GTAO 통계 뷰어 v1.0 패치노트
 
 [버그 수정]
