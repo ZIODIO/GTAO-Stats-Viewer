@@ -1,4 +1,3 @@
-[GTAO_통계뷰어_설명서.md](https://github.com/user-attachments/files/26208705/GTAO_._.md)
 # GTAO 통계 뷰어 사용 설명서
 
 ## 프로그램 소개
