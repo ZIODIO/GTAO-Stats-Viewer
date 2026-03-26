@@ -1,5 +1,3 @@
-# [다운로드](https://bit.ly/4lLfvud)
-
 # GTAO 통계 뷰어 사용 설명서
 
 
